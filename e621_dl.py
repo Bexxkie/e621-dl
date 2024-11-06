@@ -44,7 +44,8 @@ dir_arg: Path = typer.Option(
     help="Path to download directory",
 )
 save_space_arg = typer.Option(False, "-s", "--save-space", help="Save space by turning duplicates into symlinks")
-
+# using order:score and the like causes issue with mkdir, added override for post search
+path_name_arg = typer.Option(None,"-p","--path_name",help="Custom path name (like -d but for the actual root)") 
 
 class PoolOrder(str, Enum):
     NAME = "name"
@@ -66,14 +67,16 @@ def search_posts(
     download_dir: Path = dir_arg,
     save_space: bool = save_space_arg,
     _hardcoded_download_dir: Optional[Path] = typer.Option(None, hidden=True),
+    path_arg = path_name_arg,
 ) -> List[Post]:
     """Download posts that match the given set of tags"""
     formatted_tags = " ".join(normalize_tags(tags))
+    path_arg = formatted_tags if path_arg is None else path_arg
     print("Searching for posts...")
     posts = api.posts.search(formatted_tags, limit=max_posts, ignore_pagination=True)
     print(len(posts), "posts found")
     if _hardcoded_download_dir is None:
-        directory = download_dir / formatted_tags
+        directory = download_dir / path_arg
         directory.mkdir(exist_ok=True, parents=True)
     else:
         directory = _hardcoded_download_dir
